@@ -1,0 +1,38 @@
+Kindly use the steps below to deploy the sockshop application using terraform 
+
+in this project, we have 7 .tf files, all serving their propose
+
+>>> AKS.TF ---> for AKS deployment
+>>> gra.tf ---> for grafana deployment
+>>> provider.tf this help specify the provider and in this case, it is the azure provider
+>>> role_assignment.tf ----> used to assign roles to the aks cluster
+>>> socks_shop_app.tf ----> used to deploy the application using the complete-demo.yaml files
+>>> vnet ---> used to deploy the networking component of aks
+>>> cert.tf ---> used to secert your domain with letencrept
+
+
+to deploy
+1. cd to the directory microservices-demo/deploy/kubernetes
+2. run terraform init
+3. run terraform plan
+4. run terraform apply
+
+to map your domain to the public ip of the ingress 
+
+after deployment of the clusters, 
+> go to the cluter, under services and ingress, look for front-end and copy the public ip
+> go to your domain provider and map the ip to your domain
+
+to use letencrpt for TLS
+
+run the below docker command i.e make sure docker is running on yoour local machine
+
+docker run -it --rm -v /c/Users/path-to-your-webroot-file/webroot:/webroot certbot/certbot certonly --webroot -w /webroot -d sockshop.duckdns.org
+the above will allow certbot to verify you have control of your domain, if you do, it will create a .crt and a .key file for you
+add the path to the files in your cert.tf
+
+monitoring
+
+after deployment, you can go to your cluster, under "other resources" you will find grafana and promentus there
+double click to enter the dashboard where you can find all 500 metric pobulated from the cluster
+

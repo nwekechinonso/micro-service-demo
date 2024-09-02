@@ -310,13 +310,38 @@ metadata:
     name: front-end
   namespace: sock-shop
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
   - port: 80
     targetPort: 8079
     nodePort: 30001
   selector:
     name: front-end
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: front-end-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: sockshop.duckdns.org  # Set your custom domain here
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: front-end
+            port:
+              number: 80
+  # If you want to enable HTTPS, you can add this section for TLS
+  tls:
+  - hosts:
+    - sockshop.duckdns.org
+    secretName: sockshop-tls
 ---
 apiVersion: apps/v1
 kind: Deployment

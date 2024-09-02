@@ -2,6 +2,31 @@ provider "aws" {
   region = "${var.aws_region}"
 }
 
+resource "tls_private_key" "deploy_docs_k8s" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "aws_key_pair" "deploy_docs_k8s" {
+  key_name   = "deploy-docs-k8s"
+  public_key = tls_private_key.deploy_docs_k8s.public_key_openssh
+}
+
+resource "local_file" "private_key" {
+  content  = tls_private_key.deploy_docs_k8s.private_key_pem
+  filename = "${path.module}/deploy-docs-k8s.pem"
+}
+
+resource "null_resource" "change_key_permissions" {
+  provisioner "local-exec" {
+    command = "chmod 400 ${local_file.private_key.filename}"
+  }
+
+  depends_on = [local_file.private_key]
+}
+
+
+
 resource "aws_security_group" "k8s-security-group" {
   name        = "md-k8s-security-group"
   description = "allow all internal traffic, ssh, http from anywhere"
@@ -58,65 +83,121 @@ resource "aws_security_group" "k8s-security-group" {
 resource "aws_instance" "ci-sockshop-k8s-master" {
   instance_type   = "${var.master_instance_type}"
   ami             = "${lookup(var.aws_amis, var.aws_region)}"
-  key_name        = "${var.key_name}"
+  key_name        = aws_key_pair.deploy_docs_k8s.key_name
   security_groups = ["${aws_security_group.k8s-security-group.name}"]
-  tags {
+  tags = {
     Name = "ci-sockshop-k8s-master"
   }
+connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local_file.private_key.filename)
+    host        = self.public_ip
+  }
+  provisioner "file" {
+    source      = local_file.private_key.filename
+    destination = "/tmp/deploy-docs-k8s.pem"
+  }
 
-  connection {
-    user = "ubuntu"
-    private_key = "${file("${var.private_key_path}")}"
+  provisioner "local-exec" {
+    command = "pwd && ls -la /c/Users/nonso/Desktop/shop_project/microservices-demo/deploy/kubernetes/manifests"
   }
 
   provisioner "file" {
-    source = "deploy/kubernetes/manifests"
+    source = "./manifests"
     destination = "/tmp/"
   }
 
   provisioner "remote-exec" {
-    inline = [
-      "sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-      "sudo echo \"deb http://apt.kubernetes.io/ kubernetes-xenial main\" | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get update",
-      "sudo apt-get install -y docker.io",
-      "sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni"
-    ]
+  inline = [
+    "whoami",  # Output current user
+    "pwd",     # Output current directory
+    "set -x",  # Trace commands
+
+    "chmod 400 /tmp/deploy-docs-k8s.pem",
+
+    "sudo apt-get update",
+    "sudo apt-get install -y apt-transport-https curl",
+    
+    "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+    "echo 'deb https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee -a /etc/apt/sources.list.d/kubernetes.list",
+    
+    "sudo apt-get update",
+    "sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni",
+    
+    "ls -la /tmp/manifests",  # List the files to verify upload
+    "kubectl apply -f /tmp/manifests"  # Apply the Kubernetes manifests
+  ]
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local_file.private_key.filename)
+    host        = self.public_ip
   }
+}
+  depends_on = [null_resource.change_key_permissions]
+
 }
 
 resource "aws_instance" "ci-sockshop-k8s-node" {
   instance_type   = "${var.node_instance_type}"
   count           = "${var.node_count}"
   ami             = "${lookup(var.aws_amis, var.aws_region)}"
-  key_name        = "${var.key_name}"
+  key_name        = aws_key_pair.deploy_docs_k8s.key_name
   security_groups = ["${aws_security_group.k8s-security-group.name}"]
-  tags {
+  tags = {
     Name = "ci-sockshop-k8s-node"
   }
 
-  connection {
-    user = "ubuntu"
-    private_key = "${file("${var.private_key_path}")}"
+  provisioner "file" {
+    source      = local_file.private_key.filename
+    destination = "/tmp/deploy-docs-k8s.pem"
   }
 
+  connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file(local_file.private_key.filename)
+      host        = self.public_ip
+    }
+
   provisioner "remote-exec" {
-    inline = [
-      "sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-      "sudo echo \"deb http://apt.kubernetes.io/ kubernetes-xenial main\" | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get update",
-      "sudo apt-get install -y docker.io",
-      "sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni",
-      "sudo sysctl -w vm.max_map_count=262144"
-    ]
+  inline = [
+    "whoami",  # Output current user
+    "pwd",     # Output current directory
+    "set -x",  # Trace commands
+
+    "chmod 400 /tmp/deploy-docs-k8s.pem",
+
+    "sudo apt-get update",
+    "sudo apt-get install -y apt-transport-https curl",
+    
+    "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+    "echo 'deb https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee -a /etc/apt/sources.list.d/kubernetes.list",
+    
+    "sudo apt-get update",
+    "sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni",
+    
+    "ls -la /tmp/manifests",  # List the files to verify upload
+    "kubectl apply -f /tmp/manifests"  # Apply the Kubernetes manifests
+  ]
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local_file.private_key.filename)
+    host        = self.public_ip
   }
+}
+depends_on = [aws_instance.ci-sockshop-k8s-master]
 }
 
 resource "aws_elb" "ci-sockshop-k8s-elb" {
-  depends_on = [ "aws_instance.ci-sockshop-k8s-node" ]
+  depends_on = [aws_instance.ci-sockshop-k8s-node]
   name = "ci-sockshop-k8s-elb"
-  instances = ["${aws_instance.ci-sockshop-k8s-node.*.id}"]
-  availability_zones = ["${data.aws_availability_zones.available.names}"]
+  instances = aws_instance.ci-sockshop-k8s-node[*].id
+  availability_zones = data.aws_availability_zones.available.names
   security_groups = ["${aws_security_group.k8s-security-group.id}"] 
   listener {
     lb_port = 80

@@ -16,7 +16,7 @@ data "aws_availability_zones" "available" {}
 
 variable "aws_region" {
   description = "The AWS region to create things in."
-  default     = "eu-central-1"
+  default     = "us-east-1"
 }
 
 variable "instance_user" {
@@ -24,10 +24,10 @@ variable "instance_user" {
   default     = "ubuntu"
 }
 
-variable "key_name" {
-  description = "Name of the SSH keypair to use in AWS."
-  default     = "deploy-docs-k8s"
-}
+// variable "key_name" {
+//   description = "Name of the SSH keypair to use in AWS."
+//   default     = "test.pem"
+// }
 
 variable "master_instance_type" {
   description = "The instance type to use for the Kubernetes master."
@@ -44,7 +44,7 @@ variable "node_count" {
   default     = "3"
 }
 
-variable "private_key_path" {
-  description = "The private key for connection to the instances as the user. Corresponds to the key_name variable."
-  default     = "~/.ssh/deploy-docs-k8s.pem"
-}
+// variable "private_key_path" {
+//   description = "The private key for connection to the instances as the user. Corresponds to the key_name variable."
+//   default     = "/c/Users/nonso/Desktop/shop_project/microservices-demo/deploy/kubernetes/terraform/test.pem"
+// }
