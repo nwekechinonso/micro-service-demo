@@ -33,13 +33,6 @@ resource "azurerm_resource_group" "main" {
   location = "northeurope"
 }
 
-data "azurerm_kubernetes_cluster" "main" {
-  name = "main"
-}
-data "azurerm_kubernetes_cluster_auth" "main_auth" {
-  name = "main_auth"
-}
-
 
 provider "kubernetes" {
   host                   = azurerm_kubernetes_cluster.main.kube_config[0].host
