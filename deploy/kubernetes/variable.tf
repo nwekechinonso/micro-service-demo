@@ -34,3 +34,8 @@ variable "cert_manager_version" {
   description = "Version of Cert-Manager to install."
   default     = "v1.14.5"
 }
+
+variable "ingress_namespace" {
+  description = "Kubernetes namespace for the Ingress Controller"
+  default     = "ingress-nginx"
+}

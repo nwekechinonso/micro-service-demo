@@ -44,3 +44,33 @@ resource "azurerm_dns_zone" "main" {
   name                = var.domain_name
   resource_group_name = azurerm_resource_group.main.name
 }
+# Define the Kubernetes Service data source to get the ingress controller's external IP
+data "kubernetes_service" "nginx_ingress" {
+  metadata {
+    name      = "ingress-nginx-controller"
+    namespace = "ingress-nginx"
+  }
+
+  depends_on = [
+    null_resource.apply_socks_shop_manifests
+  ]
+}
+# Create a DNS A record pointing to the ingress controller's external IP
+resource "azurerm_dns_a_record" "frontend" {
+  name                = "sockshop"  # The subdomain you want to use (e.g., "sockshop")
+  zone_name           = azurerm_dns_zone.main.name
+  resource_group_name = azurerm_resource_group.main.name
+  ttl                 = 300
+
+  records = [
+    data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+  ]
+
+  depends_on = [
+    null_resource.apply_socks_shop_manifests
+  ]
+}
+
+output "external_ip" {
+  value = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+}

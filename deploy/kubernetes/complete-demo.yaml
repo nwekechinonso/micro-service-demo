@@ -319,6 +319,27 @@ spec:
   selector:
     name: front-end
 ---
+# Ingress Controller Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app: ingress-nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app: ingress-nginx
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  - name: https
+    port: 443
+    targetPort: 443
+---
+# Ingress Resource for front-end Service
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -330,7 +351,6 @@ metadata:
     kubernetes.io/ingress.class: 'nginx'
     cert-manager.io/cluster-issuer: 'letsencrypt-azure-dns'
     nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
-
 spec:
   rules:
   - host: sockshop.duckdns.org  # Set your custom domain here
@@ -343,12 +363,11 @@ spec:
             name: front-end
             port:
               number: 80
-  # If you want to enable HTTPS, you can add this section for TLS
   tls:
   - hosts:
     - sockshop.duckdns.org
     secretName: sockshop-tls
----
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
