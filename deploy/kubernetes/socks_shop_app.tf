@@ -2,18 +2,18 @@
 resource "null_resource" "apply_socks_shop_manifests" {
   provisioner "local-exec" {
     command = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${azurerm_kubernetes_cluster.main.name} --admin --overwrite-existing"
-    
+
   }
   provisioner "local-exec" {
     command = "kubectl apply -f complete-demo.yaml"
-    
+
   }
-//   provisioner "local-exec" {
-//     command = "mkdir C:\\root\\.well-known\\acme-challenge\\"
-//   }
-// provisioner "local-exec" {
-//     command = "echo 'test-content' > C:\\root\\.well-known\\acme-challenge\\testfile"
-//   }
+  //   provisioner "local-exec" {
+  //     command = "mkdir C:\\root\\.well-known\\acme-challenge\\"
+  //   }
+  // provisioner "local-exec" {
+  //     command = "echo 'test-content' > C:\\root\\.well-known\\acme-challenge\\testfile"
+  //   }
 
   depends_on = [
     azurerm_kubernetes_cluster.main,

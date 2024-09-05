@@ -1,10 +1,25 @@
-# Install Cert-Manager using Kubernetes manifest
-resource "kubernetes_manifest" "cert_manager" {
-  for_each = {
-    "cert-manager" = "https://github.com/jetstack/cert-manager/releases/download/${var.cert_manager_version}/cert-manager.yaml"
+
+resource "null_resource" "get_credentials" {
+  provisioner "local-exec" {
+    command = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${azurerm_kubernetes_cluster.main.name}"
   }
-  manifest = yamldecode(file("${each.value}"))
+
+  # Make sure this runs after the cluster is deployed
+  depends_on = [
+    azurerm_kubernetes_cluster.main
+  ]
 }
+
+resource "null_resource" "apply_cert_manager" {
+  provisioner "local-exec" {
+    command = "kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/${var.cert_manager_version}/cert-manager.yaml"
+  }
+  # Cert-Manager will be applied after kubeconfig is created
+  depends_on = [
+    null_resource.get_credentials
+  ]
+}
+
 
 # Kubernetes Secret for Azure DNS
 resource "kubernetes_secret" "azure_dns_config" {
@@ -17,19 +32,20 @@ resource "kubernetes_secret" "azure_dns_config" {
 # ClusterIssuer YAML Configuration
 resource "kubernetes_manifest" "cluster_issuer" {
   manifest = yamldecode(templatefile("cluster-issuer-template.yaml", {
-    email_address        = var.email_address,
-    client_id            = azuread_service_principal.sp.application_id,
-    subscription_id      = var.subscription_id,
-    resource_group_name  = var.resource_group_name,
-    domain_name          = var.domain_name
+    email_address       = var.email_address,
+    client_id           = azuread_service_principal.sp.application_id,
+    subscription_id     = var.subscription_id,
+    resource_group_name = var.resource_group_name,
+    domain_name         = var.domain_name
   }))
+  depends_on = [null_resource.apply_cert_manager]
 }
 
 # Output the Service Principal credentials
 output "sp_credentials" {
   value = {
-    app_id     = azuread_service_principal.sp.application_id
-    password   = random_password.sp_password.result
+    app_id   = azuread_service_principal.sp.application_id
+    password = random_password.sp_password.result
   }
   sensitive = true
 }
