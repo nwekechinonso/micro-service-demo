@@ -18,5 +18,5 @@ resource "azurerm_kubernetes_cluster" "main" {
 #out of the local kube_config that is merged to the azure kube-config
 output "kube_config" {
   value     = azurerm_kubernetes_cluster.main.kube_admin_config_raw
-  sensitive = false
+  sensitive = true
 }

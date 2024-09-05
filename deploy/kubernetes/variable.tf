@@ -5,6 +5,11 @@ variable "subscription_id" {
   default     = "1f0ec4ef-e180-4466-9c30-2e149184e9ab"
 }
 
+variable "location" {
+  description = "resource-location"
+  default     = "northeurope"
+}
+
 variable "resource_group_name" {
   description = "Resource Group name where resources will be created."
   default     = "socks-shop-resources"

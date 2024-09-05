@@ -13,7 +13,6 @@ spec:
         azureDNS:
           clientID: "${client_id}"
           subscriptionID: "${subscription_id}"
-          tenantID: "${tenant_id}"
           resourceGroupName: "${resource_group_name}"
           hostedZoneName: "${domain_name}"
           environment: AzurePublicCloud

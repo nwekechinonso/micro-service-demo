@@ -13,27 +13,24 @@ resource "azurerm_role_assignment" "aks_network_contributor" {
 
 # Service Principal
 
-resource "azurerm_service_principal" "sp" {
-  application_id = azurerm_ad_application.sp.application_id
+# Service Principal associated with the Azure AD Application
+resource "azuread_service_principal" "sp" {
+  application_id = azuread_application.sp.application_id
 }
 
-resource "azurerm_ad_application" "sp" {
+# Create Azure AD Application
+resource "azuread_application" "sp" {
   display_name = var.sp_name
 }
-
+# Generate a random password for the service principal
 resource "random_password" "sp_password" {
   length  = 32
   special = true
 }
 
-resource "azurerm_service_principal_password" "sp_password" {
-  service_principal_id = azurerm_service_principal.sp.id
-  value                = random_password.sp_password.result
-  end_date             = "2099-12-31T23:59:59Z"
-}
-
+# Role assignment for DNS Zone Contributor role
 resource "azurerm_role_assignment" "dns_zone_contributor" {
-  principal_id   = azurerm_service_principal.sp.application_id
+  principal_id         = azuread_service_principal.sp.object_id
   role_definition_name = "DNS Zone Contributor"
-  scope          = azurerm_resource_group.main.id
+  scope                = azurerm_resource_group.main.id
 }

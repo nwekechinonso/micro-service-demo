@@ -1,6 +1,11 @@
 # provider to use azure 
 terraform {
   required_providers {
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.0"
+    }
+
     helm = {
       source  = "hashicorp/helm"
       version = ">= 2.0.0"
@@ -20,6 +25,7 @@ terraform {
 
 
 provider "azurerm" {
+  subscription_id = var.subscription_id
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
