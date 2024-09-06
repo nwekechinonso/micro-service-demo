@@ -1,4 +1,5 @@
 # aks.tf used to create the AKS cluster
+
 resource "azurerm_kubernetes_cluster" "main" {
   name                = "socks-shop-cluster"
   location            = azurerm_resource_group.main.location
