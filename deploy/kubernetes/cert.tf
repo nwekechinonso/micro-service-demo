@@ -25,7 +25,8 @@ resource "kubernetes_manifest" "cluster_issuer" {
     client_id           = azuread_service_principal.sp.application_id,
     subscription_id     = var.subscription_id,
     resource_group_name = var.resource_group_name,
-    domain_name         = var.domain_name
+    domain_name         = var.domain_name,
+    tenant_id           = var.tenant_id
   }))
   depends_on = [null_resource.apply_cert_manager]
 }

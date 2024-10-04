@@ -39,3 +39,8 @@ variable "cert_manager_version" {
   description = "Version of Cert-Manager to install."
   default     = "v1.14.5"
 }
+
+variable "tenant_id" {
+  description = "tenant id"
+  default     = "34ea182a-acca-40ce-b226-803d6dc7617b"
+}
